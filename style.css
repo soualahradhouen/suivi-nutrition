@@ -145,3 +145,8 @@ input, select {
     padding-top: 1rem;
     border-top: 1px solid var(--border-color);
 }
+.auth-bar {
+    font-size: 0.8rem;
+    margin-top: 0.3rem;
+    opacity: 0.9;
+}

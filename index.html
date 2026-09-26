@@ -5,134 +5,201 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Suivi Diététique & Métabolique</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Chart.js pour les graphiques -->
+    <!-- Chart.js + Plugin datalabels pour afficher g et % dans le camembert -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <!-- SDKs Firebase (v10) -->
+    <script type="module" src="script.js"></script>
 </head>
 <body>
 
     <header>
         <h1>Suivi Diététique & Métabolique</h1>
-        <p>Optimisation Nutritionnelle & Ratio Protéique</p>
+        <p>Optimisation Nutritionnelle & Ratio Protéique (Cloud Sync)</p>
+        <div id="auth-status" class="auth-bar"></div>
     </header>
 
-    <nav class="nav-tabs">
-        <button class="tab-btn active" onclick="switchTab('profil')">Profil</button>
-        <button class="tab-btn" onclick="switchTab('poids')">Poids</button>
-        <button class="tab-btn" onclick="switchTab('repas')">Repas & Macros</button>
-        <button class="tab-btn" onclick="switchTab('dashboard')">Tableau de bord</button>
-    </nav>
-
-    <main class="container">
-
-        <!-- ONGLET 1: PROFIL -->
-        <section id="tab-profil" class="tab-content active">
-            <h2>Profil & Objectifs</h2>
-            <form id="profile-form">
+    <!-- ÉCRAN DE CONNEXION INITIAL -->
+    <div id="auth-container" class="container">
+        <div class="tab-content active">
+            <h2>Connexion / Inscription</h2>
+            <p>Connectez-vous pour synchroniser vos données entre votre PC et votre smartphone.</p>
+            <form id="login-form">
                 <div class="form-group">
-                    <label>Taille (cm) :</label>
-                    <input type="number" id="height" value="175" required>
+                    <label>Email :</label>
+                    <input type="email" id="auth-email" required>
                 </div>
                 <div class="form-group">
-                    <label>Âge :</label>
-                    <input type="number" id="age" value="38" required>
+                    <label>Mot de passe :</label>
+                    <input type="password" id="auth-password" required>
                 </div>
-                <div class="form-group">
-                    <label>Objectif de calories quotidiennes (kcal) :</label>
-                    <input type="number" id="target-calories" value="1800" required>
-                </div>
-                <div class="form-group">
-                    <label>Cible Protéines (% des calories) :</label>
-                    <input type="number" id="target-protein-ratio" value="30" required>
-                </div>
-                <button type="submit" class="btn-primary">Enregistrer le profil</button>
+                <button type="submit" id="btn-login" class="btn-primary">Se connecter</button>
+                <button type="button" id="btn-signup" class="btn-secondary" style="margin-top:0.5rem;">Créer un compte</button>
             </form>
-            <div id="profile-summary" class="summary-box"></div>
-        </section>
+        </div>
+    </div>
 
-        <!-- ONGLET 2: SUIVI DU POIDS -->
-        <section id="tab-poids" class="tab-content">
-            <h2>Suivi du Poids</h2>
-            <form id="weight-form">
-                <div class="form-group">
-                    <label>Date :</label>
-                    <input type="date" id="weight-date" required>
-                </div>
-                <div class="form-group">
-                    <label>Poids (kg) :</label>
-                    <input type="number" step="0.1" id="weight-val" placeholder="ex: 75.5" required>
-                </div>
-                <button type="submit" class="btn-primary">Ajouter le relevé</button>
-            </form>
-            <div class="chart-container">
-                <canvas id="weightChart"></canvas>
-            </div>
-        </section>
+    <!-- APPLICATION PRINCIPALE -->
+    <div id="app-container" style="display: none;">
+        <nav class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('profil')">Profil</button>
+            <button class="tab-btn" onclick="switchTab('poids')">Poids</button>
+            <button class="tab-btn" onclick="switchTab('repas')">Repas & Macros</button>
+            <button class="tab-btn" onclick="switchTab('dashboard')">Tableau de bord</button>
+        </nav>
 
-        <!-- ONGLET 3: REPAS ET MACROS -->
-        <section id="tab-repas" class="tab-content">
-            <h2>Saisie des Repas</h2>
-            <form id="meal-form">
-                <div class="form-group">
-                    <label>Date :</label>
-                    <input type="date" id="meal-date" required>
-                </div>
-                <div class="form-group">
-                    <label>Type de repas :</label>
-                    <select id="meal-type">
-                        <option value="Petit-déjeuner">Petit-déjeuner</option>
-                        <option value="Déjeuner">Déjeuner</option>
-                        <option value="Collation">Collation</option>
-                        <option value="Dîner">Dîner</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Description du repas :</label>
-                    <input type="text" id="meal-desc" placeholder="ex: Salade riche + 2 œufs" required>
-                </div>
-                <div class="form-row">
+        <main class="container">
+
+            <!-- ONGLET 1: PROFIL & SIMULATEUR MÉTABOLIQUE -->
+            <section id="tab-profil" class="tab-content active">
+                <h2>Profil & Objectifs Athlétiques</h2>
+                <form id="profile-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Taille (cm) :</label>
+                            <input type="number" id="height" value="175" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Date de naissance :</label>
+                            <input type="date" id="birthdate" value="1988-01-01" required>
+                        </div>
+                    </div>
+
                     <div class="form-group">
-                        <label>Calories (kcal) :</label>
-                        <input type="number" id="meal-kcal" required>
+                        <label>Niveau d'activité physique :</label>
+                        <select id="activity-level">
+                            <option value="1.2">Sédentaire (Bureau, peu d'exercice)</option>
+                            <option value="1.375">Légèrement actif (1-3 séances / semaine)</option>
+                            <option value="1.55" selected>Modérément actif (3-5 séances musculation / sport)</option>
+                            <option value="1.725">Très actif (6-7 séances intenses / semaine)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Objectif Physique :</label>
+                        <select id="physique-goal">
+                            <option value="recomp" selected>Masse sèche / Densité musculaire ("Super Daddy")</option>
+                            <option value="hypertrophy">Prise de masse athlétique (+200-300 kcal)</option>
+                            <option value="cut">Sèche musculaire strict (-300 kcal)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Cible Calories retenue (kcal) :</label>
+                            <input type="number" id="target-calories" value="2000" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Cible Protéines (% de l'énergie) :</label>
+                            <input type="number" id="target-protein-ratio" value="30" required>
+                        </div>
+                    </div>
+
+                    <button type="button" id="btn-calc-sim" class="btn-secondary" style="margin-bottom: 1rem;">🧮 Calculer mes besoins optimaux</button>
+                    <button type="submit" class="btn-primary">Enregistrer le profil</button>
+                </form>
+
+                <div id="sim-results" class="summary-box margin-top" style="display:none;"></div>
+                <div id="profile-summary" class="summary-box margin-top"></div>
+            </section>
+
+            <!-- ONGLET 2: SUIVI DU POIDS -->
+            <section id="tab-poids" class="tab-content">
+                <h2>Suivi du Poids</h2>
+                <form id="weight-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Date :</label>
+                            <input type="date" id="weight-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Poids (kg) :</label>
+                            <input type="number" step="0.1" id="weight-val" placeholder="ex: 75.5" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary">Ajouter le relevé</button>
+                </form>
+                <div class="chart-container margin-top">
+                    <canvas id="weightChart"></canvas>
+                </div>
+            </section>
+
+            <!-- ONGLET 3: REPAS ET MACROS -->
+            <section id="tab-repas" class="tab-content">
+                <h2>Saisie des Repas</h2>
+                <form id="meal-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Date :</label>
+                            <input type="date" id="meal-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Type de repas :</label>
+                            <select id="meal-type">
+                                <option value="Petit-déjeuner">Petit-déjeuner</option>
+                                <option value="Déjeuner">Déjeuner</option>
+                                <option value="Collation">Collation</option>
+                                <option value="Dîner">Dîner</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label>Protéines (g) :</label>
-                        <input type="number" step="0.1" id="meal-prot" required>
+                        <label>Description du repas :</label>
+                        <input type="text" id="meal-desc" placeholder="ex: Escalope grillée + slata" required>
                     </div>
-                    <div class="form-group">
-                        <label>Lipides (g) :</label>
-                        <input type="number" step="0.1" id="meal-fat" required>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Calories (kcal) :</label>
+                            <input type="number" id="meal-kcal" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Protéines (g) :</label>
+                            <input type="number" step="0.1" id="meal-prot" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Lipides (g) :</label>
+                            <input type="number" step="0.1" id="meal-fat" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Glucides (g) :</label>
+                            <input type="number" step="0.1" id="meal-carb" required>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Glucides (g) :</label>
-                        <input type="number" step="0.1" id="meal-carb" required>
-                    </div>
+                    <button type="submit" class="btn-primary">Ajouter ce repas</button>
+                </form>
+
+                <h3 class="margin-top">Journal du jour</h3>
+                <div id="daily-log"></div>
+            </section>
+
+            <!-- ONGLET 4: TABLEAU DE BORD AVANCÉ -->
+            <section id="tab-dashboard" class="tab-content">
+                <h2>Tableau de bord & Analyse Répartition</h2>
+                
+                <div class="form-group" style="max-width: 300px; margin-bottom: 1.5rem;">
+                    <label><strong>📅 Choisir le jour à analyser :</strong></label>
+                    <input type="date" id="dash-date-picker">
                 </div>
-                <button type="submit" class="btn-primary">Ajouter ce repas</button>
-            </form>
 
-            <h3 class="margin-top">Journal du jour</h3>
-            <div id="daily-log"></div>
-        </section>
+                <div id="dash-summary" class="summary-box"></div>
+                
+                <h3>Répartition Macromoléculaire (Journée sélectionnée)</h3>
+                <div class="chart-container" style="position: relative; height:320px;">
+                    <canvas id="macroChart"></canvas>
+                </div>
 
-        <!-- ONGLET 4: TABLEAU DE BORD & EXPORT -->
-        <section id="tab-dashboard" class="tab-content">
-            <h2>Synthèse & Données</h2>
-            <div id="dash-summary" class="summary-box"></div>
-            
-            <div class="chart-container">
-                <canvas id="macroChart"></canvas>
-            </div>
+                <h3 class="margin-top">Évolution quotidienne des ratios Macro (%)</h3>
+                <div class="chart-container" style="position: relative; height:320px;">
+                    <canvas id="macroHistoryChart"></canvas>
+                </div>
 
-            <div class="data-actions">
-                <h3>Sauvegarde & Synchronization</h3>
-                <p>Téléchargez vos données au format CSV pour les transférer sur un autre appareil.</p>
-                <button onclick="exportToCSV()" class="btn-secondary">Exporter en CSV</button>
-                <button onclick="clearAllData()" class="btn-danger">Réinitialiser les données</button>
-            </div>
-        </section>
+                <div class="data-actions margin-top">
+                    <button id="btn-logout" class="btn-danger">Se déconnecter</button>
+                </div>
+            </section>
 
-    </main>
+        </main>
+    </div>
 
-    <script src="script.js"></script>
 </body>
 </html>
